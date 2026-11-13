@@ -1,0 +1,35 @@
+LineItems is one of the most important parameters when creating a Stripe Checkout Session.
+
+Think of it as the shopping cart that you send to Stripe.
+
+When a customer opens the Stripe Checkout page, Stripe needs to know:
+
+What products are being purchased?
+How many?
+What is the price?
+What currency?
+
+That information is provided through LineItems.
+
+
+-===========
+
+
+GOOGLE PAY ,PHONE PAY , Stripe, PAYPAL
+
+
+Show advanced options
+
+
+1
+Download the Stripe CLI and log in with your Stripe account
+$
+stripe login
+2
+Forward events to your destination
+$
+stripe listen --forward-to localhost:4242/webhook
+3
+Trigger events with the CLI
+$
+stripe trigger payment_intent.succeeded
