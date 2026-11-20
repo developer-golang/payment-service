@@ -1,8 +1,10 @@
 package main
 
 import (
+	"command/kafka"
 	"command/razorpay"
 	"command/stripecheckouts"
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -26,8 +28,31 @@ func corsMiddleware(next http.Handler) http.Handler {
 	})
 }
 
+func handleOrderCreated(ctx context.Context, event kafka.OrderCreatedEvent) error {
+	log.Printf("Payment requested for order %s; waiting for gateway confirmation", event.OrderID)
+	return nil
+}
+
 func main() {
-	http.HandleFunc("/api/create-checkout-session", stripecheckouts.CheckoutSessionHandler)
+	producer, err := kafka.NewProducer()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer producer.Close()
+	stripecheckouts.SetProducer(producer)
+
+	consumer, err := kafka.NewConsumer()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer consumer.Close()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	go kafka.ConsumeOrders(ctx, consumer, handleOrderCreated)
+
+	// http.HandleFunc("/api/create-checkout-session", stripecheckouts.CheckoutSessionHandler)
 	http.HandleFunc("/createstripesession", stripecheckouts.CheckoutSessionHandler)
 	http.HandleFunc("/success", stripecheckouts.SuccessHandler)
 	http.HandleFunc("/api/cancel", stripecheckouts.CancelHandler)
